@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
           updated_at
         FROM users
         ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2
+        LIMIT ? OFFSET ?
       `
       )
       .all(limit, offset);
@@ -183,7 +183,7 @@ export async function PATCH(request: NextRequest) {
 
     // Check if user exists
     const existingUser = db
-      .prepare("SELECT id FROM users WHERE id = $1")
+      .prepare("SELECT id FROM users WHERE id = ?")
       .get(userId);
 
     if (!existingUser) {
@@ -197,7 +197,7 @@ export async function PATCH(request: NextRequest) {
     // Check for email uniqueness if email is being updated
     if (updates.email) {
       const emailExists = db
-        .prepare("SELECT id FROM users WHERE email = $1 AND id != $2")
+        .prepare("SELECT id FROM users WHERE email = ? AND id != ?")
         .get(updates.email, userId);
 
       if (emailExists) {
@@ -288,7 +288,7 @@ export async function DELETE(request: NextRequest) {
 
     // Check if user exists
     const existingUser = db
-      .prepare("SELECT id FROM users WHERE id = $1")
+      .prepare("SELECT id FROM users WHERE id = ?")
       .get(userId);
 
     if (!existingUser) {
