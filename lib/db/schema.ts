@@ -14,7 +14,8 @@ export function createSchema(): void {
       points INTEGER DEFAULT 0,
       streak_days INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      deleted_at DATETIME DEFAULT NULL
     )
   `);
 
