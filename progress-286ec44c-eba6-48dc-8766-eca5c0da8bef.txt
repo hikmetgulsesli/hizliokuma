@@ -105,3 +105,53 @@ Started: 2026-02-19
   - Add aria-labels to icon-only buttons for accessibility
 
 ---
+
+## 2026-02-19 09:58 - US-006: Build exercises management page with API integration
+- Created GET /api/exercises endpoint to fetch all exercises from SQLite database
+- Created PATCH /api/exercises?id={id} endpoint to toggle exercise active status
+- Updated /admin/exercises page to fetch data from API on mount
+- Added card grid display with title, description, type, difficulty_levels, duration
+- Added filter dropdown: All, Active, Inactive with dynamic counts
+- Added toggle switch to activate/deactivate exercises with visual feedback
+- Added loading state with spinner and "Egzersizler yükleniyor..." message
+- Added error state with retry button when API fails
+- Added empty state when no exercises exist (with context-aware messages)
+- Added stats cards showing total, active, and inactive counts
+- Implemented Turkish translations for exercise types (Okuma, Kelime Tanıma, etc.)
+- Implemented Turkish translations for difficulty levels (Başlangıç, Orta, İleri)
+- Added cursor-pointer on all clickable elements
+- Added hover states on cards
+- Added focus-visible rings for accessibility
+- Added aria-labels for toggle switches and buttons
+- Used Lucide React icons exclusively (Dumbbell, Clock, Layers, CheckCircle2, XCircle, Filter)
+
+- Created comprehensive test suite with 21 tests:
+  - Loading skeleton display while fetching
+  - API fetch on mount
+  - Exercise data display in card grid
+  - Correct column display (title, description, type, difficulty_levels, duration)
+  - Error state when API fails
+  - Error state on network error
+  - Refresh button functionality
+  - Retry button in error state
+  - Empty state when no exercises
+  - Filter by active/inactive status
+  - Toggle exercise status
+  - Status badges display (Aktif/Pasif)
+  - Stats cards with correct counts
+  - Turkish translations for types and difficulty levels
+  - Accessibility attributes on toggle switches
+
+- Files changed:
+  - app/admin/exercises/page.tsx (complete rewrite)
+  - app/api/exercises/route.ts (new)
+  - __tests__/admin-exercises-page.test.tsx (new)
+
+- **Learnings:**
+  - Use getAllByText when multiple elements match the same text pattern
+  - Card-based layouts work well for exercise management (better than tables for varied content)
+  - Toggle switches should have immediate visual feedback and loading state
+  - Stats cards provide valuable overview information at a glance
+  - Filter dropdowns with dynamic counts help users understand data distribution
+
+---
