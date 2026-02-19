@@ -1,0 +1,117 @@
+# Progress Log
+Run: b448d7b5-66aa-43e6-aa5e-aad0469d92ba
+Task: HIZLI OKUMA UYGULAMASI - React Admin Panel
+Started: 2026-02-19
+
+## Codebase Patterns
+
+### Project Structure
+- Next.js 14.2.0 with App Router
+- TypeScript with strict mode
+- Tailwind CSS with shadcn/ui components
+- SQLite database with better-sqlite3 (NOT Prisma)
+- Jest + React Testing Library for tests
+- Plus Jakarta Sans (heading) + Work Sans (body) font pair
+
+### Database Patterns
+- Database files in `lib/db/` directory
+- Connection management in `lib/db/connection.ts`
+- Schema definition in `lib/db/schema.ts`
+- Seed data in `lib/db/seed.ts`
+- Database file location: `data/hizliokuma.db`
+- Use parameterized queries exclusively (NEVER string concatenation)
+- Foreign keys with CASCADE delete for relationships
+- Indexes on all foreign keys and frequently queried columns
+- Scripts: `pnpm db:setup` and `pnpm db:reset`
+
+### Component Patterns
+- shadcn/ui components in `components/ui/`
+- Admin-specific components in `components/admin-*.tsx`
+- Pages under `app/admin/` route group
+- Lucide React icons exclusively (no emojis)
+
+### Styling Patterns
+- Using CSS custom properties via Tailwind (HSL format)
+- Dark mode support via `dark` class on html
+- Custom font variables: `--font-heading`, `--font-body`
+- Transition durations: 150-200ms for micro-interactions
+- cursor-pointer on ALL interactive elements
+- text-wrap: balance for headings
+- font-variant-numeric: tabular-nums for numeric data
+
+### Testing Patterns
+- Tests in `__tests__/` directory
+- Mock `next/navigation` for pathname testing
+- Mock `next/link` for rendering tests
+- Use `data-testid` for element selection
+- tsconfig.json excludes test files from typecheck
+
+---
+
+## 2026-02-19 08:50 - US-001: Setup design tokens and typography system
+- Implemented comprehensive design tokens in globals.css:
+  - SaaS color palette (blue primary, amber accent)
+  - Surface, text, and border colors
+  - Status colors (success, warning, error, info)
+  - Spacing scale (xs to 3xl)
+  - Border radius scale (sm to xl)
+  - Shadow scale (sm to xl)
+- Configured Plus Jakarta Sans + Work Sans font pair via next/font/google
+- Added font-display: swap for performance
+- Updated Tailwind config with font-heading and font-body classes
+- Added cursor-pointer on all interactive elements
+- Added reduced motion media query for accessibility
+- Added text-wrap: balance and tabular-nums utilities
+- Created comprehensive design tokens test suite (35 tests)
+- All 42 tests passing
+- Typecheck passes
+- Build successful
+
+**Files changed:**
+- `app/globals.css` - Complete design tokens system
+- `app/layout.tsx` - Font configuration with next/font
+- `tailwind.config.js` - Font family extensions
+- `tsconfig.json` - Exclude test files from typecheck
+- `__tests__/design-tokens.test.tsx` - New test suite
+
+**Learnings:**
+- The project uses next/font/google for optimal font loading
+- Font pair is Plus Jakarta Sans (heading) + Work Sans (body)
+- Design tokens use CSS custom properties in HSL format
+- Test files need to be excluded from typecheck to avoid jest type conflicts
+- shadcn/ui components follow a consistent pattern with `cn()` utility
+
+---
+
+## 2026-02-19 09:21 - US-002: Set up SQLite database schema
+- Installed better-sqlite3 for SQLite database access
+- Created database connection module at lib/db/connection.ts
+- Created database schema with all required tables:
+  - users: id, name, email, password_hash, level, points, streak_days, created_at, updated_at
+  - exercises: id, title, description, type, difficulty_levels, duration_minutes, is_active
+  - user_exercise_results: id, user_id, exercise_id, score, wpm, completed_at
+  - rewards: id, title, description, type, threshold, icon
+  - user_rewards: id, user_id, reward_id, earned_at
+- Added foreign key constraints with CASCADE delete
+- Created indexes on foreign keys and frequently queried columns
+- Added seed script with 12 mock users, 12 exercises, 8 rewards
+- Added npm scripts: `db:setup` and `db:reset`
+- Created comprehensive test suite for database schema (26 tests)
+- All tests pass, typecheck passes, build successful
+
+**Files changed:**
+- `package.json` - Added better-sqlite3, @types/better-sqlite3, tsx; added db scripts
+- `lib/db/connection.ts` - Database connection management
+- `lib/db/schema.ts` - Database schema definition
+- `lib/db/seed.ts` - Seed data for development
+- `scripts/setup-db.ts` - Database setup script
+- `__tests__/database-schema.test.ts` - Comprehensive test suite
+
+**Learnings:**
+- Project uses better-sqlite3 (synchronous API) for database access
+- Database file should be in `data/` directory (gitignored)
+- WAL mode enabled for better concurrency
+- Use parameterized queries exclusively - never string concatenation
+- Foreign keys must be explicitly enabled in SQLite with PRAGMA
+- Tests should clean up database files between runs to avoid state leakage
+- 26 tests covering schema, constraints, indexes, and data integrity
