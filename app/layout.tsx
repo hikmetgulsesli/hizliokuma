@@ -1,22 +1,35 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from "next";
+import { Plus_Jakarta_Sans, Work_Sans } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/components/auth-provider";
 
-const inter = Inter({ subsets: ['latin'] })
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["500", "600", "700"],
+});
+
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
-  title: 'Hızlı Okuma Admin',
-  description: 'Hızlı okuma egzersizleri yönetim paneli',
-}
+  title: "Hızlı Okuma Admin",
+  description: "Hızlı okuma egzersizleri yönetim paneli",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="tr">
-      <body className={inter.className}>{children}</body>
+    <html lang="tr" className={`${plusJakarta.variable} ${workSans.variable}`}>
+      <body className="font-sans antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
-  )
+  );
 }

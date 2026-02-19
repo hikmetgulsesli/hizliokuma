@@ -29,3 +29,5 @@ coverage/
 *.pem
 *.key
 *.secret
+
+/lib/generated/prisma
