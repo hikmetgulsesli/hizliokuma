@@ -9,9 +9,20 @@ Started: 2026-02-19
 - Next.js 14.2.0 with App Router
 - TypeScript with strict mode
 - Tailwind CSS with shadcn/ui components
-- Prisma ORM for database
+- SQLite database with better-sqlite3 (NOT Prisma)
 - Jest + React Testing Library for tests
 - Plus Jakarta Sans (heading) + Work Sans (body) font pair
+
+### Database Patterns
+- Database files in `lib/db/` directory
+- Connection management in `lib/db/connection.ts`
+- Schema definition in `lib/db/schema.ts`
+- Seed data in `lib/db/seed.ts`
+- Database file location: `data/hizliokuma.db`
+- Use parameterized queries exclusively (NEVER string concatenation)
+- Foreign keys with CASCADE delete for relationships
+- Indexes on all foreign keys and frequently queried columns
+- Scripts: `pnpm db:setup` and `pnpm db:reset`
 
 ### Component Patterns
 - shadcn/ui components in `components/ui/`
@@ -71,3 +82,36 @@ Started: 2026-02-19
 - shadcn/ui components follow a consistent pattern with `cn()` utility
 
 ---
+
+## 2026-02-19 09:21 - US-002: Set up SQLite database schema
+- Installed better-sqlite3 for SQLite database access
+- Created database connection module at lib/db/connection.ts
+- Created database schema with all required tables:
+  - users: id, name, email, password_hash, level, points, streak_days, created_at, updated_at
+  - exercises: id, title, description, type, difficulty_levels, duration_minutes, is_active
+  - user_exercise_results: id, user_id, exercise_id, score, wpm, completed_at
+  - rewards: id, title, description, type, threshold, icon
+  - user_rewards: id, user_id, reward_id, earned_at
+- Added foreign key constraints with CASCADE delete
+- Created indexes on foreign keys and frequently queried columns
+- Added seed script with 12 mock users, 12 exercises, 8 rewards
+- Added npm scripts: `db:setup` and `db:reset`
+- Created comprehensive test suite for database schema (26 tests)
+- All tests pass, typecheck passes, build successful
+
+**Files changed:**
+- `package.json` - Added better-sqlite3, @types/better-sqlite3, tsx; added db scripts
+- `lib/db/connection.ts` - Database connection management
+- `lib/db/schema.ts` - Database schema definition
+- `lib/db/seed.ts` - Seed data for development
+- `scripts/setup-db.ts` - Database setup script
+- `__tests__/database-schema.test.ts` - Comprehensive test suite
+
+**Learnings:**
+- Project uses better-sqlite3 (synchronous API) for database access
+- Database file should be in `data/` directory (gitignored)
+- WAL mode enabled for better concurrency
+- Use parameterized queries exclusively - never string concatenation
+- Foreign keys must be explicitly enabled in SQLite with PRAGMA
+- Tests should clean up database files between runs to avoid state leakage
+- 26 tests covering schema, constraints, indexes, and data integrity
