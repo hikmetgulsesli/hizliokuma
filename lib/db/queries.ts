@@ -147,3 +147,84 @@ export function getPopularExercises(limit: number = 5): PopularExercise[] {
     percentage: maxCompletions > 0 ? Math.round((exercise.completions / maxCompletions) * 100) : 0,
   }));
 }
+
+// Analytics metrics interfaces
+export interface AnalyticsMetrics {
+  totalUsers: number;
+  activeUsers: number;
+  totalExercises: number;
+  completedExercises: number;
+  averageWpm: number;
+  totalRewards: number;
+  redeemedRewards: number;
+}
+
+export interface WeeklyActivity {
+  day: string;
+  completions: number;
+}
+
+export interface ExerciseDistribution {
+  type: string;
+  count: number;
+}
+
+// Get analytics metrics
+export function getAnalyticsMetrics(): AnalyticsMetrics {
+  const db = getDatabase();
+
+  const totalUsers = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count;
+  const activeUsers = (db.prepare('SELECT COUNT(DISTINCT user_id) as count FROM user_exercise_results WHERE completed_at > datetime("now", "-7 days")').get() as { count: number }).count;
+  const totalExercises = (db.prepare('SELECT COUNT(*) as count FROM exercises').get() as { count: number }).count;
+  const completedExercises = (db.prepare('SELECT COUNT(*) as count FROM user_exercise_results').get() as { count: number }).count;
+  const avgWpmResult = db.prepare('SELECT AVG(wpm) as avg FROM user_exercise_results').get() as { avg: number | null };
+  const totalRewards = (db.prepare('SELECT COUNT(*) as count FROM rewards').get() as { count: number }).count;
+  const redeemedRewards = (db.prepare('SELECT COUNT(*) as count FROM user_rewards WHERE is_redeemed = 1').get() as { count: number }).count;
+
+  return {
+    totalUsers,
+    activeUsers,
+    totalExercises,
+    completedExercises,
+    averageWpm: Math.round(avgWpmResult.avg || 0),
+    totalRewards,
+    redeemedRewards,
+  };
+}
+
+// Get weekly activity data
+export function getWeeklyActivity(): WeeklyActivity[] {
+  const db = getDatabase();
+  const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+  
+  const results: WeeklyActivity[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const dayResult = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM user_exercise_results 
+      WHERE date(completed_at) = date("now", "-${i} days")
+    `).get() as { count: number };
+    
+    const dayIndex = (new Date().getDay() + 6 - i) % 7;
+    results.push({
+      day: days[dayIndex],
+      completions: dayResult.count,
+    });
+  }
+  
+  return results;
+}
+
+// Get exercise type distribution
+export function getExerciseDistribution(): ExerciseDistribution[] {
+  const db = getDatabase();
+  
+  return db.prepare(`
+    SELECT 
+      type,
+      COUNT(*) as count
+    FROM exercises
+    WHERE is_active = 1
+    GROUP BY type
+  `).all() as ExerciseDistribution[];
+}
