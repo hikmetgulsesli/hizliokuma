@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, Timer, Play, RotateCcw } from "lucide-react"
+import { saveExerciseResult, EXERCISE_TYPES, getCurrentUserId } from "@/lib/exercise-results"
 
 const sampleTexts = [
   "Bilim insanları, düzenli kitap okumanın beyin fonksiyonlarını güçlendirdiğini kanıtladı. Her gün en az yirmi dakika okumak, hafızayı %15 oranında iyileştiriyor. Okuma alışkanlığı, odak süresini uzatırken aynı zamanda kelime dağarcığını da genişletiyor.",
@@ -15,6 +16,8 @@ export default function BlokOkumaPage() {
   const [finished, setFinished] = useState(false)
   const [textIndex, setTextIndex] = useState(0)
   const [elapsed, setElapsed] = useState(0)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -36,17 +39,38 @@ export default function BlokOkumaPage() {
     setStarted(true)
     setFinished(false)
     setElapsed(0)
+    setSaveError(null)
     setTextIndex(Math.floor(Math.random() * sampleTexts.length))
   }
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     setFinished(true)
+    
+    // Calculate results
+    const wordCount = sampleTexts[textIndex].split(/\s+/).length
+    const wpm = Math.round((wordCount / elapsed) * 60)
+    const score = Math.min(100, Math.round((wpm / 300) * 100)) // Score based on WPM, max 100
+
+    // Save to database
+    setIsSaving(true)
+    const result = await saveExerciseResult({
+      user_id: getCurrentUserId(),
+      exercise_id: EXERCISE_TYPES.BLOK_OKUMA,
+      score,
+      wpm,
+    })
+    setIsSaving(false)
+
+    if (!result.success) {
+      setSaveError(result.error || "Sonuç kaydedilemedi")
+    }
   }
 
   const handleReset = () => {
     setStarted(false)
     setFinished(false)
     setElapsed(0)
+    setSaveError(null)
   }
 
   if (!started) {
@@ -76,7 +100,7 @@ export default function BlokOkumaPage() {
 
           <button
             onClick={handleStart}
-            className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
             <Play className="w-5 h-5" />
             Başla
@@ -94,6 +118,18 @@ export default function BlokOkumaPage() {
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-8 text-center">Sonuçlar</h1>
+
+          {isSaving && (
+            <div className="text-center text-muted-foreground mb-4">
+              Sonuçlar kaydediliyor...
+            </div>
+          )}
+
+          {saveError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-600 p-4 rounded-xl mb-4">
+              {saveError}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-muted p-6 rounded-xl text-center">
@@ -117,14 +153,14 @@ export default function BlokOkumaPage() {
           <div className="flex gap-4">
             <button
               onClick={handleReset}
-              className="flex-1 py-4 border rounded-lg font-medium hover:bg-muted flex items-center justify-center gap-2"
+              className="flex-1 py-4 border rounded-lg font-medium hover:bg-muted flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
               <RotateCcw className="w-5 h-5" />
               Tekrar Dene
             </button>
             <Link
               href="/egzersizler"
-              className="flex-1 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 text-center"
+              className="flex-1 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 text-center cursor-pointer transition-colors"
             >
               Egzersizlere Dön
             </Link>
@@ -156,7 +192,7 @@ export default function BlokOkumaPage() {
 
         <button
           onClick={handleFinish}
-          className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90"
+          className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 cursor-pointer transition-colors"
         >
           Bitirdim
         </button>
