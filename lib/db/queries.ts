@@ -228,3 +228,44 @@ export function getExerciseDistribution(): ExerciseDistribution[] {
     GROUP BY type
   `).all() as ExerciseDistribution[];
 }
+
+// ============ User Authentication Queries ============
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  password_hash: string;
+  level: number;
+  points: number;
+  streak_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateUserParams {
+  name: string;
+  email: string;
+  password_hash: string;
+}
+
+export function createUser(params: CreateUserParams): User {
+  const db = getDatabase();
+  
+  const result = db.prepare(`
+    INSERT INTO users (name, email, password_hash)
+    VALUES (?, ?, ?)
+  `).run(params.name, params.email, params.password_hash);
+  
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid) as User;
+}
+
+export function findUserByEmail(email: string): User | undefined {
+  const db = getDatabase();
+  return db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User | undefined;
+}
+
+export function findUserById(id: number): User | undefined {
+  const db = getDatabase();
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User | undefined;
+}
