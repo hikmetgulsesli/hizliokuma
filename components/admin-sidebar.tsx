@@ -6,18 +6,11 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
   LayoutDashboard,
   BookOpen,
   Users,
   Trophy,
   BarChart3,
-  Menu,
   X,
   ChevronLeft,
   ChevronRight,
@@ -173,43 +166,30 @@ export function AdminSidebar({
           </div>
 
           <nav className="flex-1 space-y-1 p-2" aria-label="Ana navigasyon">
-            <TooltipProvider key="tooltip-provider">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
-                const Icon = item.icon
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
+              const Icon = item.icon
 
-                const navLink = (
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                      isCollapsed && "justify-center px-2"
-                    )}
-                    aria-current={isActive ? "page" : undefined}
-                    data-testid={`nav-link-${item.href}`}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    {!isCollapsed && item.title}
-                  </Link>
-                )
-
-                if (isCollapsed) {
-                  return (
-                    <Tooltip key={item.href}>
-                      <div className="contents">{navLink}</div>
-                      <TooltipContent>
-                        {item.title}
-                      </TooltipContent>
-                    </Tooltip>
-                  )
-                }
-
-                return navLink
-              })}
-            </TooltipProvider>
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    isCollapsed && "justify-center px-2"
+                  )}
+                  aria-current={isActive ? "page" : undefined}
+                  data-testid={`nav-link-${item.href}`}
+                  title={isCollapsed ? item.title : undefined}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && item.title}
+                </Link>
+              )
+            })}
           </nav>
 
           <div className="border-t p-4">
