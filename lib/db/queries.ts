@@ -269,3 +269,114 @@ export function findUserById(id: number): User | undefined {
   const db = getDatabase();
   return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User | undefined;
 }
+
+// ============ Leaderboard Queries ============
+
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  points: number;
+  streakDays: number;
+  totalExercises: number;
+}
+
+export interface UserRank {
+  rank: number;
+  name: string;
+  points: number;
+  streakDays: number;
+  totalExercises: number;
+}
+
+/**
+ * Get top users ordered by points for the leaderboard
+ * @param limit - Maximum number of users to return (default: 10)
+ * @returns Array of leaderboard entries with rank, name, points, streakDays, and totalExercises
+ */
+export function getLeaderboard(limit: number = 10): LeaderboardEntry[] {
+  const db = getDatabase();
+
+  const users = db.prepare(`
+    SELECT 
+      u.name,
+      u.points,
+      u.streak_days,
+      COUNT(uer.id) as total_exercises
+    FROM users u
+    LEFT JOIN user_exercise_results uer ON u.id = uer.user_id
+    GROUP BY u.id, u.name, u.points, u.streak_days
+    ORDER BY u.points DESC, u.streak_days DESC, u.name ASC
+    LIMIT ?
+  `).all(limit) as Array<{
+    name: string;
+    points: number;
+    streak_days: number;
+    total_exercises: number;
+  }>;
+
+  return users.map((user, index) => ({
+    rank: index + 1,
+    name: user.name,
+    points: user.points,
+    streakDays: user.streak_days,
+    totalExercises: user.total_exercises,
+  }));
+}
+
+/**
+ * Get a specific user's rank in the leaderboard
+ * @param userId - The user's ID
+ * @returns UserRank with rank and stats, or null if user not found
+ */
+export function getUserRank(userId: number): UserRank | null {
+  const db = getDatabase();
+
+  // First, get the user's stats
+  const user = db.prepare(`
+    SELECT 
+      u.id,
+      u.name,
+      u.points,
+      u.streak_days,
+      COUNT(uer.id) as total_exercises
+    FROM users u
+    LEFT JOIN user_exercise_results uer ON u.id = uer.user_id
+    WHERE u.id = ?
+    GROUP BY u.id, u.name, u.points, u.streak_days
+  `).get(userId) as {
+    id: number;
+    name: string;
+    points: number;
+    streak_days: number;
+    total_exercises: number;
+  } | undefined;
+
+  if (!user) {
+    return null;
+  }
+
+  // Calculate the user's rank based on points (higher points = better rank)
+  // Users with same points are ordered by streak_days, then by name
+  const rankResult = db.prepare(`
+    SELECT COUNT(*) + 1 as rank
+    FROM users
+    WHERE points > ?
+      OR (points = ? AND streak_days > ?)
+      OR (points = ? AND streak_days = ? AND name < ?)
+  `).get(
+    user.points,
+    user.points,
+    user.streak_days,
+    user.points,
+    user.streak_days,
+    user.name
+  ) as { rank: number };
+
+  return {
+    rank: rankResult.rank,
+    name: user.name,
+    points: user.points,
+    streakDays: user.streak_days,
+    totalExercises: user.total_exercises,
+  };
+}
