@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, Timer, Play, RotateCcw, Search, CheckCircle, XCircle } from "lucide-react"
+import { saveExerciseResult, EXERCISE_TYPES, getCurrentUserId } from "@/lib/exercise-results"
 
 const words = [
   "bilim", "beyin", "hafıza", "kitap", "okuma", "kelime", "hız", "odak",
@@ -24,6 +25,8 @@ export default function MetinAramaPage() {
   const [foundWords, setFoundWords] = useState<string[]>([])
   const [showResult, setShowResult] = useState<{word: string, found: boolean} | null>(null)
   const [targetCount, setTargetCount] = useState(10)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -32,7 +35,7 @@ export default function MetinAramaPage() {
         setElapsed(e => e + 1)
       }, 1000)
     } else if (elapsed >= 180) {
-      setFinished(true)
+      handleFinish()
     }
     return () => clearInterval(interval)
   }, [started, finished, elapsed])
@@ -48,6 +51,7 @@ export default function MetinAramaPage() {
     setFinished(false)
     setElapsed(0)
     setFoundWords([])
+    setSaveError(null)
     setTargetWord(words[Math.floor(Math.random() * words.length)])
   }
 
@@ -64,11 +68,35 @@ export default function MetinAramaPage() {
     setTimeout(() => setShowResult(null), 1000)
   }
 
+  const handleFinish = async () => {
+    if (finished) return
+    setFinished(true)
+    
+    // Calculate results
+    const score = Math.min(100, Math.round((foundWords.length / targetCount) * 100))
+    const wpm = Math.round((foundWords.length / Math.max(elapsed, 1)) * 60)
+
+    // Save to database
+    setIsSaving(true)
+    const result = await saveExerciseResult({
+      user_id: getCurrentUserId(),
+      exercise_id: EXERCISE_TYPES.METIN_ARAMA,
+      score,
+      wpm,
+    })
+    setIsSaving(false)
+
+    if (!result.success) {
+      setSaveError(result.error || "Sonuç kaydedilemedi")
+    }
+  }
+
   const handleReset = () => {
     setStarted(false)
     setFinished(false)
     setElapsed(0)
     setFoundWords([])
+    setSaveError(null)
   }
 
   if (!started) {
@@ -82,7 +110,7 @@ export default function MetinAramaPage() {
 
           <h1 className="text-3xl font-bold mb-4">Metin Arama</h1>
           <p className="text-muted-foreground mb-8">
-            3 dakikada {targetCount} kelime bul. Hafızını ve seçici okur olmayı destekler.
+            3 dakikada {targetCount} kelime bul. Hafızanı ve seçici okur olmayı destekler.
           </p>
 
           <div className="bg-muted p-6 rounded-xl mb-8">
@@ -97,7 +125,7 @@ export default function MetinAramaPage() {
 
           <button
             onClick={handleStart}
-            className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
             <Play className="w-5 h-5" />
             Başla
@@ -110,11 +138,24 @@ export default function MetinAramaPage() {
   if (finished) {
     const score = foundWords.length
     const target = targetCount
+    const targetMet = score >= target
 
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-8 text-center">Sonuçlar</h1>
+
+          {isSaving && (
+            <div className="text-center text-muted-foreground mb-4">
+              Sonuçlar kaydediliyor...
+            </div>
+          )}
+
+          {saveError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-600 p-4 rounded-xl mb-4">
+              {saveError}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-muted p-6 rounded-xl text-center">
@@ -129,10 +170,16 @@ export default function MetinAramaPage() {
 
           <div className="bg-muted p-6 rounded-xl mb-8">
             <div className="text-center">
-              {score >= target ? (
-                <div className="text-green-500 text-xl">🎉 Tebrikler! Hedefi tutturdun!</div>
+              {targetMet ? (
+                <div className="flex items-center justify-center gap-2 text-green-500 text-xl">
+                  <CheckCircle className="w-6 h-6" />
+                  <span>Tebrikler! Hedefi tutturdun!</span>
+                </div>
               ) : (
-                <div className="text-yellow-500 text-xl">💪 Daha iyi yapabilirsin!</div>
+                <div className="flex items-center justify-center gap-2 text-yellow-500 text-xl">
+                  <XCircle className="w-6 h-6" />
+                  <span>Daha iyi yapabilirsin!</span>
+                </div>
               )}
               <div className="text-muted-foreground mt-2">Hedef: {target} kelime</div>
             </div>
@@ -141,14 +188,14 @@ export default function MetinAramaPage() {
           <div className="flex gap-4">
             <button
               onClick={handleReset}
-              className="flex-1 py-4 border rounded-lg font-medium hover:bg-muted flex items-center justify-center gap-2"
+              className="flex-1 py-4 border rounded-lg font-medium hover:bg-muted flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
               <RotateCcw className="w-5 h-5" />
               Tekrar Dene
             </button>
             <Link
               href="/egzersizler"
-              className="flex-1 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 text-center"
+              className="flex-1 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 text-center cursor-pointer transition-colors"
             >
               Egzersizlere Dön
             </Link>
@@ -184,27 +231,38 @@ export default function MetinAramaPage() {
             <div key={idx} className="bg-card p-4 rounded-xl border">
               <p className="text-lg">{sentence}</p>
               <div className="flex flex-wrap gap-2 mt-3">
-                {sentence.toLowerCase().split(/\s+/).map((word, wIdx) => (
-                  <button
-                    key={wIdx}
-                    onClick={() => handleWordClick(word.replace(/[.,]/g, ''))}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      foundWords.includes(word.replace(/[.,]/g, ''))
-                        ? "bg-green-500 text-white"
-                        : "bg-muted hover:bg-muted/80"
-                    }`}
-                  >
-                    {word}
-                  </button>
-                ))}
+                {sentence.toLowerCase().split(/\s+/).map((word, wIdx) => {
+                  const cleanWord = word.replace(/[.,]/g, '')
+                  const isFound = foundWords.includes(cleanWord)
+                  return (
+                    <button
+                      key={wIdx}
+                      onClick={() => handleWordClick(cleanWord)}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                        isFound
+                          ? "bg-green-500 text-white"
+                          : "bg-muted hover:bg-muted/80"
+                      }`}
+                    >
+                      {word}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground mb-4">
           Bulunan: {foundWords.length} / {targetCount}
         </div>
+
+        <button
+          onClick={handleFinish}
+          className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 cursor-pointer transition-colors"
+        >
+          Bitir
+        </button>
 
         {showResult && (
           <div className={`fixed inset-0 flex items-center justify-center bg-black/50 ${showResult ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
