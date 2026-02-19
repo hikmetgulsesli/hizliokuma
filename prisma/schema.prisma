@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for students and admins
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  password      String    // hashed password
+  fullName      String
+  role          UserRole  @default(STUDENT)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  exerciseResults ExerciseResult[]
+  userRewards   UserReward[]
+  streaks       Streak[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+// Exercise types for the hizli okuma application
+model Exercise {
+  id          String       @id @default(cuid())
+  type        ExerciseType
+  title       String
+  description String?
+  level       Int          // 1-8 (1 is highest, 8 is lowest)
+  content     String       // JSON or text content for the exercise
+  targetTime  Int?         // target time in seconds
+  targetScore Int?         // target score/points
+  wordCount   Int?         // number of words (for golgeleme)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  results     ExerciseResult[]
+
+  @@map("exercises")
+}
+
+enum ExerciseType {
+  BLOK_OKUMA      // Block reading - continuous text reading
+  GRUP_OKUMA      // Group reading - 3+ word groups
+  METIN_ARAMA     // Text search - word finding exercise
+  GOLGELEME       // Shadowing - automatic speed reading
+}
+
+// Results/attempts for each exercise
+model ExerciseResult {
+  id              String   @id @default(cuid())
+  userId          String
+  exerciseId      String
+  score           Int      // points earned (25, 50, 100)
+  completionTime  Int      // time taken in seconds
+  accuracy        Float?   // accuracy percentage
+  wordsFound      Int?     // for metin arama
+  wordsRemembered Int?     // for golgeleme word recall
+  medal           Medal?   // medal earned
+  stars           Int?     // 1-3 stars
+  completedAt     DateTime @default(now())
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@map("exercise_results")
+}
+
+enum Medal {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+// Rewards/Medals that can be earned
+model Reward {
+  id          String     @id @default(cuid())
+  type        RewardType
+  name        String
+  description String?
+  iconUrl     String?    // URL to medal/badge icon
+  requirement String     // e.g., "complete 5 exercises", "streak 10 days"
+  points      Int?       // bonus points for earning this
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  userRewards UserReward[]
+
+  @@map("rewards")
+}
+
+enum RewardType {
+  MEDAL_BRONZE
+  MEDAL_SILVER
+  MEDAL_GOLD
+  STREAK_5
+  STREAK_10
+  STREAK_15
+  STREAK_20
+  STREAK_30
+  LEVEL_UP
+  DAILY_GOAL
+}
+
+// User's earned rewards
+model UserReward {
+  id       String   @id @default(cuid())
+  userId   String
+  rewardId String
+  earnedAt DateTime @default(now())
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rewardId])
+  @@map("user_rewards")
+}
+
+// Streak tracking for daily practice
+model Streak {
+  id             String    @id @default(cuid())
+  userId         String
+  currentStreak  Int       @default(0)  // consecutive days
+  longestStreak  Int       @default(0)  // personal best
+  lastActivityAt DateTime? // last exercise completion
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("streaks")
+}
