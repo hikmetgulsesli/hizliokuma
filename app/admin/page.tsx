@@ -1,6 +1,123 @@
-import { AdminLayout } from "@/components/admin-layout"
+"use client";
+
+import { useEffect, useState } from "react";
+import { AdminLayout } from "@/components/admin-layout";
+import { Loader2, AlertCircle } from "lucide-react";
+
+interface DashboardStats {
+  totalUsers: number;
+  activeExercises: number;
+  totalCompletedExercises: number;
+  dailyAverageMinutes: number;
+}
+
+interface RecentActivity {
+  id: number;
+  userName: string;
+  action: string;
+  timeAgo: string;
+}
+
+interface PopularExercise {
+  id: number;
+  name: string;
+  completions: number;
+  percentage: number;
+}
+
+interface DashboardData {
+  stats: DashboardStats;
+  recentActivities: RecentActivity[];
+  popularExercises: PopularExercise[];
+}
 
 export default function AdminDashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch("/api/dashboard/stats");
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to fetch dashboard data");
+        }
+        
+        const result = await response.json();
+        setData(result.data);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, []);
+
+  // Format number with Turkish locale
+  const formatNumber = (num: number): string => {
+    return num.toLocaleString("tr-TR");
+  };
+
+  // Calculate trend (mock for now - would need historical data)
+  const getTrend = (value: number): { change: string; trend: "up" | "down" | "neutral" } => {
+    // For demo purposes, return neutral trend
+    // In production, this would compare with previous period
+    return { change: "+0%", trend: "neutral" };
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex h-[400px] items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Yükleniyor...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="flex h-[400px] items-center justify-center">
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-8 dark:border-red-800 dark:bg-red-950">
+            <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+            <p className="text-center text-red-800 dark:text-red-200">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+            >
+              Yeniden Dene
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!data) {
+    return (
+      <AdminLayout>
+        <div className="flex h-[400px] items-center justify-center">
+          <p className="text-muted-foreground">Veri bulunamadı.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const { stats, recentActivities, popularExercises } = data;
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -16,27 +133,23 @@ export default function AdminDashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Toplam Kullanıcı"
-            value="1,234"
-            change="+12%"
-            trend="up"
+            value={formatNumber(stats.totalUsers)}
+            {...getTrend(stats.totalUsers)}
           />
           <StatCard
             title="Aktif Egzersiz"
-            value="4"
-            change="0%"
-            trend="neutral"
+            value={formatNumber(stats.activeExercises)}
+            {...getTrend(stats.activeExercises)}
           />
           <StatCard
             title="Tamamlanan"
-            value="8,567"
-            change="+23%"
-            trend="up"
+            value={formatNumber(stats.totalCompletedExercises)}
+            {...getTrend(stats.totalCompletedExercises)}
           />
           <StatCard
             title="Günlük Ortalama"
-            value="24 dk"
-            change="-5%"
-            trend="down"
+            value={`${stats.dailyAverageMinutes} dk`}
+            {...getTrend(stats.dailyAverageMinutes)}
           />
         </div>
 
@@ -46,21 +159,18 @@ export default function AdminDashboardPage() {
               Son Aktiviteler
             </h2>
             <div className="mt-4 space-y-4">
-              <ActivityItem
-                user="Ahmet Y."
-                action="Blok Okuma tamamladı"
-                time="2 dakika önce"
-              />
-              <ActivityItem
-                user="Mehmet K."
-                action="Seviye 5'e yükseldi"
-                time="15 dakika önce"
-              />
-              <ActivityItem
-                user="Ayşe S."
-                action="Gölgeleme egzersizi başlattı"
-                time="1 saat önce"
-              />
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity) => (
+                  <ActivityItem
+                    key={activity.id}
+                    user={activity.userName}
+                    action={activity.action}
+                    time={activity.timeAgo}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Henüz aktivite bulunmuyor.</p>
+              )}
             </div>
           </div>
 
@@ -69,39 +179,31 @@ export default function AdminDashboardPage() {
               Popüler Egzersizler
             </h2>
             <div className="mt-4 space-y-4">
-              <ExerciseItem
-                name="Blok Okuma"
-                completions={342}
-                percentage={85}
-              />
-              <ExerciseItem
-                name="Gölgeleme"
-                completions={298}
-                percentage={72}
-              />
-              <ExerciseItem
-                name="Metin Arama"
-                completions={256}
-                percentage={64}
-              />
-              <ExerciseItem
-                name="Grup Okuma"
-                completions={198}
-                percentage={49}
-              />
+              {popularExercises.length > 0 ? (
+                popularExercises.map((exercise) => (
+                  <ExerciseItem
+                    key={exercise.id}
+                    name={exercise.name}
+                    completions={exercise.completions}
+                    percentage={exercise.percentage}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Henüz egzersiz verisi bulunmuyor.</p>
+              )}
             </div>
           </div>
         </div>
       </div>
     </AdminLayout>
-  )
+  );
 }
 
 interface StatCardProps {
-  title: string
-  value: string
-  change: string
-  trend: "up" | "down" | "neutral"
+  title: string;
+  value: string;
+  change: string;
+  trend: "up" | "down" | "neutral";
 }
 
 function StatCard({ title, value, change, trend }: StatCardProps) {
@@ -113,9 +215,9 @@ function StatCard({ title, value, change, trend }: StatCardProps) {
         <span
           className={`text-sm font-medium ${
             trend === "up"
-              ? "text-green-600"
+              ? "text-green-600 dark:text-green-400"
               : trend === "down"
-              ? "text-red-600"
+              ? "text-red-600 dark:text-red-400"
               : "text-muted-foreground"
           }`}
         >
@@ -123,13 +225,13 @@ function StatCard({ title, value, change, trend }: StatCardProps) {
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 interface ActivityItemProps {
-  user: string
-  action: string
-  time: string
+  user: string;
+  action: string;
+  time: string;
 }
 
 function ActivityItem({ user, action, time }: ActivityItemProps) {
@@ -141,13 +243,13 @@ function ActivityItem({ user, action, time }: ActivityItemProps) {
       </div>
       <span className="text-xs text-muted-foreground">{time}</span>
     </div>
-  )
+  );
 }
 
 interface ExerciseItemProps {
-  name: string
-  completions: number
-  percentage: number
+  name: string;
+  completions: number;
+  percentage: number;
 }
 
 function ExerciseItem({ name, completions, percentage }: ExerciseItemProps) {
@@ -159,10 +261,10 @@ function ExerciseItem({ name, completions, percentage }: ExerciseItemProps) {
       </div>
       <div className="h-2 w-full rounded-full bg-secondary">
         <div
-          className="h-2 rounded-full bg-primary transition-all"
+          className="h-2 rounded-full bg-primary transition-all duration-200"
           style={{ width: `${percentage}%` }}
         />
       </div>
     </div>
-  )
+  );
 }
