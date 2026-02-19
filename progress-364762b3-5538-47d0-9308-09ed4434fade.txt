@@ -1,0 +1,54 @@
+# Progress Log
+Run: 364762b3-5538-47d0-9308-09ed4434fade
+Task: HIZLI OKUMA - KALAN OZELLIKLER. Puan Tablosu sayfasi ve egzersiz sonuclari kayit sistemi.
+Started: 2026-02-19
+
+## Codebase Patterns
+- Uses better-sqlite3 with synchronous API (DatabaseSync)
+- SQL queries use ? positional parameters (NOT $1/$2)
+- Tests use Jest with ts-jest
+- Database tests use fresh schema + seed pattern
+- User interface uses Turkish language
+- Lucide React for icons (no emoji)
+
+---
+
+## 2026-02-19 20:15 - US-001: Add leaderboard database query function
+- Added `getLeaderboard(limit)` and `getUserRank(userId)` functions to `lib/db/queries.ts`
+- Created comprehensive test suite in `__tests__/leaderboard-queries.test.ts` with 21 tests
+- Typecheck passes, all leaderboard tests pass
+- PR: https://github.com/hikmetgulsesli/hizliokuma/pull/28
+- **Learnings:** The project uses better-sqlite3 with synchronous API. SQL queries use ? placeholders. Leaderboard ranking uses points DESC, streak_days DESC, name ASC as tiebreaker.
+
+---
+
+## 2026-02-19 20:45 - US-003: Update Puan Tablosu page with real leaderboard data
+- Modified `/app/puan-tablosu/page.tsx` to fetch real data from `/api/leaderboard`
+- Replaced emoji avatars with Lucide icons (Crown, Medal, Award, User, Flame)
+- Added loading skeleton component with animate-pulse
+- Added error state component with retry functionality
+- Shows authenticated user's position highlighted with "Sen" badge
+- Shows user's rank outside top 50 if authenticated
+- Points displayed with locale formatting (4,500)
+- Streak days shown with Flame icon
+- Added award system legend (Bronz/Gümüş/Altın)
+- Created comprehensive test suite in `__tests__/puan-tablosu-page.test.tsx` with 13 tests
+- Typecheck passes, all tests pass
+- PR: https://github.com/hikmetgulsesli/hizliokuma/pull/30
+- **Learnings:** Client components use "use client" directive. LocalStorage is used for user authentication state. Lucide icons add `.lucide` class to SVG elements.
+
+---
+
+## 2026-02-19 20:30 - US-002: Create leaderboard API GET endpoint
+- Created new API route at `/app/api/leaderboard/route.ts`
+- GET handler calls `getLeaderboard()` from `lib/db/queries`
+- Supports `?limit=N` query parameter (default: 20, max: 100)
+- Returns JSON response with proper error handling following project standards
+- Response includes rank, name, points, streakDays, totalExercises
+- Error format: `{ error: { code, message } }`
+- Created comprehensive test suite in `__tests__/api-leaderboard.test.ts` with 21 tests
+- Typecheck passes, all tests pass
+- PR: https://github.com/hikmetgulsesli/hizliokuma/pull/29
+- **Learnings:** API routes follow consistent error/success response format. Use URL constructor to parse query parameters. Cap limit at 100 to prevent abuse.
+
+---
