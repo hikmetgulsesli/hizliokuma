@@ -1,0 +1,19 @@
+# Progress Log
+Run: c2c0f6cc-2504-4db5-a3c2-60f9030ba95f
+Task: HIZLI OKUMA - KULLANICI SAYFALARI REPO: /home/setrox/hizliokuma BRANCH: user-pages - User stories for user authentication and pages
+Started: 2026-02-19
+
+## Codebase Patterns
+- This project uses SQLite with better-sqlite3 (synchronous database)
+- Uses parameterized queries with `?` placeholders (not $1)
+- All API routes follow Next.js App Router conventions
+- Uses Zod for input validation
+- JWT secret defaults to environment variable or fallback for dev
+
+---
+## 2026-02-19/19:10 - US-002: Implement JWT authentication API
+- Created JWT authentication API with register and login endpoints
+- Files: lib/auth/* (token.ts, password.ts, middleware.ts, index.ts), app/api/auth/register/route.ts, app/api/auth/login/route.ts, __tests__/api-auth.test.ts
+- PR: https://github.com/hikmetgulsesli/hizliokuma/pull/25
+- **Learnings:** JWT tokens expire in 7 days, bcrypt uses 10 rounds, uses zod for validation, follows backend standards for error responses
+---
