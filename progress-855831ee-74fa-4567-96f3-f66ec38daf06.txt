@@ -1,0 +1,69 @@
+# Progress Log
+Run: 855831ee-74fa-4567-96f3-f66ec38daf06
+Task: HIZLI OKUMA UYGULAMASI - React Admin Panel
+Started: 2026-02-19
+
+## Codebase Patterns
+
+### Project Structure
+- Next.js 14.2.0 with App Router
+- TypeScript with strict mode
+- Tailwind CSS with shadcn/ui components
+- Prisma ORM for database
+- Jest + React Testing Library for tests
+- Plus Jakarta Sans (heading) + Work Sans (body) font pair
+
+### Component Patterns
+- shadcn/ui components in `components/ui/`
+- Admin-specific components in `components/admin-*.tsx`
+- Pages under `app/admin/` route group
+- Lucide React icons exclusively (no emojis)
+
+### Styling Patterns
+- Using CSS custom properties via Tailwind (HSL format)
+- Dark mode support via `dark` class on html
+- Custom font variables: `--font-heading`, `--font-body`
+- Transition durations: 150-200ms for micro-interactions
+
+### Testing Patterns
+- Tests in `__tests__/` directory
+- Mock `next/navigation` for pathname testing
+- Mock `next/link` for rendering tests
+- Use `data-testid` for element selection
+
+---
+
+## 2026-02-19 04:50 - US-004: Create admin layout and navigation
+- Implemented AdminSidebar with mobile and desktop variants
+- Implemented AdminHeader with user menu and theme toggle
+- Implemented AdminLayout wrapper component
+- Created admin pages: Dashboard, Exercises, Users, Rewards, Analytics
+- Added shadcn/ui components: Sheet, Tooltip, Avatar, DropdownMenu
+- Sidebar features: collapse toggle, active route highlighting, tooltips
+- Mobile features: slide-out drawer with overlay
+- All 22 tests passing
+- **Files changed:**
+  - `components/admin-sidebar.tsx`
+  - `components/admin-header.tsx`
+  - `components/admin-layout.tsx`
+  - `components/ui/sheet.tsx`
+  - `components/ui/tooltip.tsx`
+  - `components/ui/avatar.tsx`
+  - `components/ui/dropdown-menu.tsx`
+  - `app/admin/page.tsx`
+  - `app/admin/exercises/page.tsx`
+  - `app/admin/users/page.tsx`
+  - `app/admin/rewards/page.tsx`
+  - `app/admin/analytics/page.tsx`
+  - `app/page.tsx` (redirects to /admin)
+  - `__tests__/admin-layout.test.tsx`
+  - `__tests__/page.test.tsx`
+
+**Learnings:**
+- The project uses a mobile-first approach with separate mobile/desktop sidebar implementations
+- Lucide React is the chosen icon library
+- Font pair is Plus Jakarta Sans + Work Sans (professional, warm)
+- shadcn/ui components follow a consistent pattern with `cn()` utility
+- Tests need to mock both `next/navigation` and `next/link`
+
+---
