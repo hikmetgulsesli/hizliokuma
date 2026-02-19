@@ -1,0 +1,58 @@
+# Progress Log
+Run: 150646ce-ef45-441e-88ba-e36417093f54
+Task: HIZLI OKUMA UYGULAMASI - React Admin Panel
+Started: 2026-02-19
+
+## Codebase Patterns
+- This project uses Next.js 14 with App Router
+- Database: better-sqlite3 with synchronous API
+- Testing: Jest + React Testing Library
+- UI Components: shadcn/ui with Tailwind CSS
+- API Routes: Next.js Route Handlers in app/api/*
+- Error response format: `{ error: { code, message, details? } }`
+- Success response format: `{ data, meta? }`
+- DB Query utilities in lib/db/queries.ts for dashboard stats
+
+---
+
+## 2026-02-19 10:21 - US-001: Create Users API endpoint
+- Created `app/api/users/route.ts` with GET, PATCH, DELETE endpoints
+- GET: Returns paginated list of users (page, limit query params)
+- PATCH: Updates user fields with validation (name, email, level, points, streak_days)
+- DELETE: Hard deletes user by ID
+- Added comprehensive tests in `__tests__/api-users.test.ts` (19 tests)
+- All tests pass (85 total)
+- Build passes
+- PR created: https://github.com/hikmetgulsesli/hizliokuma/pull/13
+
+**Learnings:**
+- The project uses better-sqlite3 with positional parameters (?)
+- Jest setup needs Request/NextRequest polyfills for API route testing
+- tsconfig.json excludes test files from build to avoid jest type issues
+- Error handling follows consistent pattern: typed errors with code/message/details
+
+---
+
+## 2026-02-19 10:35 - US-002: Create DB query utilities for dashboard stats
+- Created `lib/db/queries.ts` with reusable database query functions:
+  - `getTotalUsers()`: Returns count of all users
+  - `getActiveExercises()`: Returns count of exercises where is_active = 1
+  - `getTotalCompletedExercises()`: Returns total count of user_exercise_results
+  - `getDailyAverageMinutes()`: Returns average duration from exercise results
+  - `getRecentActivities(limit)`: Returns recent exercise completions with user names
+  - `getPopularExercises(limit)`: Returns exercises sorted by completion count
+- Added TypeScript interfaces `RecentActivity` and `PopularExercise` for type safety
+- All queries use parameterized queries for security
+- Created comprehensive test suite in `__tests__/db-queries.test.ts` (18 tests)
+- All 103 tests pass
+- Typecheck passes
+- Build passes
+- PR created: https://github.com/hikmetgulsesli/hizliokuma/pull/14
+
+**Learnings:**
+- better-sqlite3 uses `.prepare().get()` for single row results and `.prepare().all()` for multiple rows
+- LEFT JOIN is useful for getting exercises with zero completions
+- SQL `AVG()` returns null when no rows match, so need to handle that case
+- Use parameterized queries with `?` placeholders for security
+
+---
